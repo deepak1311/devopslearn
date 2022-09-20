@@ -1,0 +1,582 @@
+Notes:
+------
+   1. Use t2.medium type instances for installing jenkins
+   2. use t2.medium type instances for installing nexus
+   2. use t2.medium type instances for installing Sonar
+   4. Default portnumber
+      ------------------
+         Jenkins   : 8080
+         SonarQube : 9000
+         Nexus     : 8081
+         Tomcat    : 8080/9090 (change the portnumber because jenkins running on 8080)
+  
+   5.  Install git int jenkins instance itself
+   6.  Install Java and Maven in Jenkins console
+   7.  Master Slave in Jenkins
+       -----------------------
+           ---> Master : Install Java, Git, Jenkins, Maven
+           ---> Slave  : Install Java
+-------------------------------------------------------------------------------------------------------------------------
+                                                                                                                        
+           java installation                                                                                            
+           -----------------                                                                                            
+           #yum install java-1.8*                                                                                       
+           cd ~                                                                                                         
+           vi .bash_profile                                                                  
+          JAVA_HOME=java-1.8.0-openjdk-1.8.0.272.b10-1.amzn2.0.1.x86_64                                                 
+          PATH=$PATH:$JAVA_HOME:$HOME/bin
+
+          find / -name javac
+
+------------------------------------------------------------------------------------------------------------------------
+
+1. AWS 
+------
+  1. Create security group
+     ---------------------
+       ---> Name : SecurityGroup-One (any name can be given)
+       ---> Inbound  Rules
+            --------------
+               ---> SSH - 22
+               ---> HTTP - 80
+               ---> Custom TCP - 8080, 9000, 8081, 9090
+
+  2. Create ec2 Instance
+     -------------------
+       1.Jenkins
+         -------
+           ---> Name : JENKINS SERVER (any name can be given)
+           ---> add security group to the instance "SecurityGroup-One"
+      
+       2. SonarQube
+          ---------
+            ---> Name : SONARQUBE SERVER (any name can be given)
+            ---> add security group to the instance "SecurityGroup-One"
+
+       3. Nexus
+          -----
+            ---> Name : NEXUS SERVER (any name can be given)
+            ---> add security group to the instance "SecurityGroup-One"
+
+       4. Tomcat
+          -----
+            ---> Name : TOMCAT SERVER (any name can be given)
+            ---> add security group to the instance "SecurityGroup-One"
+
+
+
+
+2. Open Instance "JENKINS SERVER" in putty
+------------------------------------------
+  1. Move to root user    : sudo su -
+  2. Change the directoty : cd /opt
+  3. Do update            : yum update -y
+  4. Install java         : yum -y install java-1.8.0-openjdk
+     ------------
+        check version : java -version
+  5. Install "wget"       : yum install	wget -y
+  6. Install Jenkins
+     ---------------
+        ---> wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+        ---> sudo rpm -import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+             ----------------------------------
+                ---> check RPM Version : rpm version
+
+        ---> yum install jenkins -y
+
+  7. Jenkins Commands
+     ----------------
+        1. To Start jenkins server 
+           -----------------------
+              ---> systemctl enable jenkins
+              ---> systemctl start jenkins
+
+        2. To Check jenkins server sarted
+           ------------------------------
+              ---> systemctl status jenkins {note:Active: active (running) in green}
+  
+  8. To open the Jenkins console
+     ---------------------------
+        ---> hit the browser : http://<JENKINS SERVER IP address>:8080
+
+  9. To get the "AdminPassword" : cat /var/lib/jenkins/secrets/initialAdminPassword
+  10. Select option              : Install suggested plugins
+  11. User Creation (Optional)
+      -------------
+         username : kishoresrini
+         password : Test@123
+         fullname : kishoresrini
+         email    : kishoresrinivasan.s@gmail.com
+
+
+
+
+3. Open Instance "SONARQUBE SERVER" in putty
+--------------------------------------------
+  1. Move to root user    : sudo su -
+  2. Change the directoty : cd /opt
+  3. Do update            : yum update -y
+  4. Install java         : yum -y install java-1.8.0-openjdk
+     ------------
+        check version : java -version
+  5. Install "wget"       : yum install	wget -y
+  6. Install SonarQube
+     -----------------
+        ---> wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-7.8.zip
+        ---> unzip sonarqube-7.8.zip
+
+  7. Create new user      : useradd sonar
+  8. Give sudo access to user(sonar)
+     -------------------------------
+        ---> visudo
+        ---> sonar ALL=(ALL) NOPASSWD: ALL
+
+  9. Change owner and group permission to /opt/sonarqube-7.8 directory
+     -----------------------------------------------------------------
+        ---> chown -R sonar:sonar /opt/sonarqube-7.8/
+        ---> chmod -R 775 /opt/sonarqube-7.8/
+        ---> su - sonar
+  
+  10. To start SonarQube
+      ------------------
+        ---> cd /opt/sonarqube-7.8/bin/linux-x86-64
+        ---> ./sonar.sh start
+
+  11. To Check SonarQube status
+      -------------------------
+        ---> ./sonar.sh status 
+  
+  12. To open the SonarQube console
+     ---------------------------
+        ---> hit the browser : http://<SONARQUBE SERVER IP address>:9000
+
+  13. Login
+      -----
+        username : admin
+        password : admin
+
+
+
+
+4. Open Instance "NEXUS SERVER" in putty
+----------------------------------------
+  1. Move to root user    : sudo su -
+  2. Change the directoty : cd /opt
+  3. Do update            : yum update -y
+  4. Install java         : yum -y install java-1.8.0-openjdk
+     ------------
+        check version : java -version
+  5. Install "wget"       : yum install	wget -y
+  6. Install Nexus
+     -------------
+        ---> wget http://download.sonatype.com/nexus/3/nexus-3.15.2-01-unix.tar.gz
+        ---> tar -zxvf nexus-3.15.2-01-unix.tar.gz
+        ---> mv /opt/nexus-3.15.2-01 /opt/nexus
+
+
+  7. Create new user      : useradd nexus
+  8. Give sudo access to user(sonar)
+     -------------------------------
+        ---> visudo
+        ---> nexus ALL=(ALL) NOPASSWD: ALL
+
+  9. Change owner and group permission to /opt/nexus directory
+     -----------------------------------------------------------------
+        ---> chown -R nexus:nexus /opt/nexus
+        ---> chown -R nexus:nexus /opt/sonatype-work
+        ---> chmod -R 775 /opt/nexus
+        ---> chmod -R 775 /opt/sonatype-work
+
+  10. uncomment "run_as_user" parameter and set user
+      ----------------------------------------------
+        ---> vi /opt/nexus/bin/nexus.rc
+        ---> run_as_user="nexus"
+
+  11. Create nexus as a service
+      -------------------------
+         ---> ln -s /opt/nexus/bin/nexus /etc/init.d/nexus
+
+  12. Start nexus as nexus user
+      -------------------------
+         ---> su - nexus
+         ---> sudo systemctl enable nexus
+         ---> sudo systemctl start nexus
+
+
+  13. To Check Nexus status
+      -------------------------
+        ---> sudo systemctl status nexus 
+
+  12. To open the Nexus console
+     ---------------------------
+        ---> hit the browser : http://<NEXUS SERVER IP address>:8081
+
+
+  13. Login
+      -----
+        username : admin
+        password : admin123
+
+  14. Create 2 Repository
+      -------------------
+         1. for Release  : MyRepository-Release
+         2. for Snapshot : MyRepository-Snapshot
+
+
+
+
+5. Open Instance "TOMCAT SERVER" in putty
+-----------------------------------------
+  1. Move to root user    : sudo su -
+  2. Change the directoty : cd /opt
+  3. Do update            : yum update -y
+  4. Install java         : yum -y install java-1.8.0-openjdk
+     ------------
+        check version : java -version
+  5. Install "wget"       : yum install	wget -y
+  6. Install Tomcat
+     --------------
+        ---> wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.43/bin/apache-tomcat-9.0.43.zip
+        ---> unzip apache-tomcat-9.0.43.zip
+        ---> cd /opt/apache-tomcat-9.0.43/bin
+        ---> chmod u+x *.sh
+        ---> ln -s /opt/apache-tomcat-9.0.43/bin/startup.sh /usr/bin/startTomcat
+        ---> ln -s /opt/apache-tomcat-9.0.43/bin/shutdown.sh /usr/bin/stopTomcat
+
+  7. To start and stop Tomcat
+      -----------------------
+        ---> startTomcat
+        ---> stopTomcat
+  
+  8. Comment below lines
+     -------------------
+        ---> vi /opt/apache-tomcat-9.0.43/webapps/host-manager/META-INF/context.xml
+        ---> <!-- <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+                    allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />  -->
+           
+        ---> vi /opt/apache-tomcat-9.0.43/webapps/manager/META-INF/context.xml
+        ---> <!-- <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+                    allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />  -->
+
+  9. Change the port number
+     ----------------------
+        ---> vi /opt/apache-tomcat-9.0.43/conf/server.xml (9090)
+
+  10. To Create username and password for console
+      -------------------------------------------
+         ---> vi /opt/apache-tomcat-9.0.43/conf/tomcat-users.xml
+         ---> <user username="admin" password="admin@123" roles="admin-gui,manager-gui"/>
+                      
+                      username : admin
+                      password : admin@123
+
+
+
+7. Install git in "JENKINS SERVER" along with Jenkins
+-----------------------------------------------------
+  1. Move to root user    : sudo su -
+  2. Change the directoty : cd /opt
+  3. Install git          : yum install git -y
+     -----------
+        check version : git --version
+      
+
+8. Sonarqube integration with jenkins
+-------------------------------------
+  1. open Jenkins instance
+      --------------------
+           sudo su -
+           cd /opt
+           wget https://dl.bintray.com/sonarsource/SonarQube/org/sonarsource/scanner/cli/sonar-scanner-cli/4.5.0.2216/sonar-scanner-cli-4.5.0.2216.zip
+           unzip sonar-scanner-cli-4.5.0.2216.zip  
+           mv sonar-scanner-4.5.0.2216 /opt/sonar-scanner
+           
+           cd /opt/sonar-scanner/conf
+           vi sonar-scanner.poperties
+           sonar.host.url=http://<SONAR_SERVER_IP>:9000
+
+
+
+
+
+------------------------------------------------------------------------------------------------------
+                           Creating "FREESTYLE JOB" in Jenkins (MAVEN)
+------------------------------------------------------------------------------------------------------
+
+1. Creating Job in Jenkins
+--------------------------
+  1. new item -> # <job Name>
+                 # select freestyle project
+                 -> Source code management -> Git
+                                              # Repository URL : https://github.com/KishoreSrinivasan/maven-web.git
+                                              # Credentials    : git hub login details
+
+
+2. Configuring Maven
+--------------------
+  1. Install java in jenkins console
+     -------------------------------
+        manage jenkins -> global tool confguraion -> JDK -> JDK installation
+
+                              [OR]
+        Configure the JDK directory from the host
+          
+  
+  2. Install maven in jenkins console
+     -------------------------------
+        manage jenkins -> global tool confguraion -> Maven -> maven installation
+
+  3. Configure -> Build -> Invoke top-level maven target
+                           # Goals : clean package
+
+
+3. Configuring SonarQube
+------------------------
+  1. Edit pom.xml
+     ------------
+        <properties>
+		<sonar.host.url>http://<SONARQUBE SERVER IP address>:9000/</sonar.host.url>
+		<sonar.login>admin</sonar.login>
+		<sonar.password>admin</sonar.password>
+	</properties>
+
+  2. Install Plugin
+     --------------
+        manage jenkins -> manage plugin -> available -> SonarQube Scanner
+
+  3. Configure -> Build -> Invoke top-level maven target
+                           # Goals : clean sonar:sonar package
+
+
+
+4. Configuring Nexus
+--------------------
+  1. Edit pom.xml
+     ------------
+        <distributionManagement>
+	    <repository>
+	      <id>nexus</id>
+	      <name>VK Technologies Releases Nexus Repository</name>
+	      <url>http://54.189.254.88:8081/repository/MyRepository-release/</url>
+	    </repository>
+	    
+	    <snapshotRepository>
+	      <id>nexus</id>
+	      <name>VK Technologies Snapshot Nexus Repository </name>
+	      <url>http://54.189.254.88:8081/repository/MyRepository-snapshot/</url>
+	    </snapshotRepository>
+	</distributionManagement>
+
+
+  2. configure repo details in setting.xml under "JENKINS SERVER"
+     ------------------------------------------------------------
+        ---> sudo su -
+        ---> cd /var/lib/jenkins
+        ---> cd tools/hudson.tasks.Maven_MavenInstallation/maven_-_3.6.3/conf
+        ---> vi settings.xml (under servers tag)
+             ---------------
+                <server>
+                   <id>nexus</id>
+                   <username>admin</username>
+                   <password>admin123</password>
+                </server>
+
+  3. Configure -> Build -> Invoke top-level maven target
+                           # Goals : clean sonar:sonar deploy
+
+
+5. Configuring Tomcat
+---------------------
+  1. Install Plugin
+     --------------
+        manage jenkins -> manage plugin -> available -> Deploy to Container
+
+
+  3. Configure -> Post-build Actions -> Add post-build action
+                                        # Deploy war/ear to a container
+                                        # WAR/EAR files : **/maven-web-application.war
+                                        # Container     : Tomcat 9.x
+                                              # Credentials : username and password
+                                              # Tomcat URL  : http://<TOMCAT SERVER IP address>:9090/
+
+
+------------------------------------------------------------------------------------------------------
+                          for Gradle
+------------------------------------------------------------------------------------------------------
+
+1. Build --> execute sonarqube scanner --> analysis properties
+                                           -------------------
+                                            sonar.projectKey=ediig
+                                            sonar.login=admin
+                                            sonar.password=admin
+                                            sonar.exclusions=src/main/resources/**
+                                            sonar.sources=/var/lib/jenkins/workspace/eDiigNow_2.0
+                                            sonar.host.url=http://65.1.235.236:9000/
+
+2. Nexus artifactory upload
+---------------------------
+       # Nexus Version : NEXUS3
+       # Protocol : HTTP
+       # Nexus URL : http://<nexus ip addree>:8081
+       # Credentials : add
+       # GroupId : any name
+       # Version : any (1.0) or (1.0-SNAPSHOT)
+       # Repository : repository name based on version
+       # Artifacts
+           # ArtifactId : any name
+           # Type : war
+           # File : /var/lib/jenkins/workspace/eDiigNow_2.0/build/libs/<war file name>.war
+
+
+3. Invoke Gradle Script
+-----------------------
+        # Gradle version : choose the gradle installed in  jenkins instance
+        # Task : clean build
+
+
+------------------------------------------------------------------------------------------------------
+                           Master Slave Congiguration in Jenkins
+------------------------------------------------------------------------------------------------------
+
+1. Create Slave Node  (any no of Slave can be created)
+--------------------
+      ---> Name : JENKINS SLAVE (any name can be given)
+      ---> add security group to the instance "SecurityGroup-One"
+
+
+2. Open Instance "JENKINS SLAVE" in putty
+------------------------------------------
+  1. Move to root user    : sudo su -
+  2. Change the directoty : cd /opt
+  3. Do update            : yum update -y
+  4. Install java         : yum -y install java-1.8.0-openjdk
+     ------------
+        check version : java -version
+
+  5. Install git          : yum install git -y
+     -----------
+        check version : git --version
+
+
+3. Open "JENKINS SERVER" console
+--------------------------------
+    manage jenkins -> manage node and cloud -> new node
+                                               # Node name : JENKINS SLAVE ONE (any name can be given)
+                                               # Select " Permanent Agent"
+                                               # Remote root Directory   : /home/ec2-user/slaveone
+                                                 ---------------------
+                                                     1. open "JENKINS SLAVE ONE" INSTANCE
+                                                     2. Create Directory
+                                                        ----------------
+                                                           --> mkdir slaveone
+                                                           --> pwd  : /home/ec2-user/slaveone
+                                               
+                                               # Lables  : slaves (optional - used for grouping slave nodes)
+                                               # Launch Method
+                                                 -------------
+                                                      Host        : <JENKINS SLAVE ONE DNS address>
+                                                      Credentials : usename and password
+                                                      -----------
+                                                         # Kind        : SSH Username and Private key
+                                                         # username    : ec2-user
+                                                         # private key : <copy the content of pem file using "GIT Bash">
+                                                         # Host Key Verification Strategy : Manually trusted key verification strategy
+
+
+4. Configuring "JENKINS SLAVE ONE" in Jenkins Job
+-------------------------------------------------
+     Select the job -> configure -> General
+                                    # Select Restrict where this project can be run
+                                    # Label Expression : JENKINS SLAVE ONE (or) slaves
+                                      ----------------
+                                          Node name : JENKINS SLAVE ONE
+                                          Lables    : slaves
+------------------------------------------------------------------------------------------------------
+                           Creating "DECLARATIVE PIPELINE" in Jenkins (MAVEN)
+------------------------------------------------------------------------------------------------------
+
+1. Creating Job in Jenkins
+--------------------------
+  1. new item -> # <job Name>
+                 # select pipeline
+                 -> Source code management -> Git
+                                              # Repository URL : https://github.com/KishoreSrinivasan/maven-web.git
+                                              # Credentials    : git hub login details
+
+
+2. Install Plugins
+------------------
+         1. Sonarqube scanner
+         2. ssh agent
+
+
+3. SonarQube Configurations
+---------------------------
+       1. manage jenkins --> System Configuration --> SonarQube servers
+                                                        # enable : environment variable
+                                                        # Name : any name
+                                                        # url : http://<SONARQUBE SERVER IP address>:9000/
+                                                        # Authentication Token  :  1. login to sonarqube server
+                                                                                   2. administration --> security --> users --> generate token
+     
+       
+     2. open Jenkins instance
+      --------------------
+           sudo su -
+           cd /opt
+           wget https://dl.bintray.com/sonarsource/SonarQube/org/sonarsource/scanner/cli/sonar-scanner-cli/4.5.0.2216/sonar-scanner-cli-4.5.0.2216.zip
+           unzip sonar-scanner-cli-4.5.0.2216.zip  
+           mv sonar-scanner-4.5.0.2216 /opt/sonar-scanner
+           
+           cd /opt/sonar-scanner/conf
+           vi sonar-scanner.poperties
+           sonar.host.url=http://<SONAR_SERVER_IP>:9000
+
+
+3. add "sonar-project.properties" with project
+----------------------------------------------
+   
+          soanr.projectKey = java
+          sonar.projectName = java
+          sonar.projectVersion = 1.0
+          sonar.sources = src/main/java
+
+          sonar.language = java
+          sonar.java.binaries =.
+          sonar.sourceEncoding = UTF-8
+
+
+
+pipeline {
+     agent any
+     environment {
+        PATH="/opt/maven3/bin:$PATH"
+    }
+     stages {
+         stage("git pull") {
+             steps {
+                 git credentialsId: 'GitHubCredentials', url: 'https://github.com/KishoreSrinivasan/maven-web.git'
+             }
+         }
+         stage("sonar scan") {
+              steps {
+                  withSonarQubeEnv('sonar server') {
+                        sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://54.218.8.94:9000 -Dsonar.projectKey=java -Dsonar.login=e3899f6d6a9e0f046fb6fcf0d304a97d3ade9300"
+                }
+             }
+         }
+         stage("maven") {
+             steps {
+                 sh "mvn clean package"
+             }
+         }
+         stage("tomcat") {
+             steps {
+                 sshagent(['TomcatInstance']) {
+                     sh "scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/java-pipeline/target/maven-web-application.war ec2-user@54.190.22.28:/opt/apache-tomcat-8.5.64/webapps"
+                     
+                 }
+             }
+         }
+     }
+}

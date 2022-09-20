@@ -1,0 +1,349 @@
+Notes:
+------
+
+
+1. Docker SetUp
+---------------
+  
+  1. Create an EC2 Instance "DOCKER SERVER" t2.micro
+     Create an EC2 Instance for "TOMCAT SERVER" t2.micro
+
+  2. Install Java in "DOCKER SERVER"
+     -------------------------------
+           yum install java-1.8*                                                                                       
+           cd ~                                                                                                         
+           vi .bash_profile                                                                  
+           JAVA_HOME=java-1.8.0-openjdk-1.8.0.272.b10-1.amzn2.0.1.x86_64                                                 
+           PATH=$PATH:$JAVA_HOME:$HOME/bin
+
+           find / -name javac
+
+
+  3. Install Docker in "DOCKER SERVER"
+     ---------------------------------
+           1. install command : sudo amazon-linux-extras install docker
+           2. soft link : sudo service docker start
+           3. Add ec2-user to docker group : sudo usermod -a -G docker ec2-user
+
+           4. Make docker auto-start : sudo chkconfig docker on
+
+
+  4. Install GIT in "DOCKER SERVER"
+     ------------------------------
+           1. Move to root user    : sudo su -
+           2. Change the directoty : cd /opt
+           3. Install git          : yum install git -y
+              -----------
+                  check version : git --version
+
+          
+           4. Clone Project
+              -------------
+                  git clone <Repository url>
+
+
+  5. Install MAVEN in "DOCKER SERVER"
+     --------------------------------
+           1. Move to root user    : sudo su -
+           2. Change the directoty : cd /opt
+           3. Install maven        : yum install maven
+            
+           4. Build the project
+              -----------------
+                    # cd <to the project source file>
+                    # mvn clean package
+
+
+  6. Create Docket account in "DOCKER HUB"
+
+
+
+
+2. Open Instance "TOMCAT SERVER" in putty
+-----------------------------------------
+
+  1. Install docker in "TOMCAT SERVER" Instance
+
+
+
+3. Docker Container creation
+----------------------------
+*************************************************************************************************
+*   Syantax : docker build -t <imageName>:version   // by default version will be "latest"       *
+*                             -----------                                                        *
+*                                  <Dockerhub account usename>/imagename:1                       *
+*           ------------------------------------------------------------------                   *
+*           | example : docker build -t kishoresrinivasan/maven-web-app:1 .  |                   *
+*           ------------------------------------------------------------------                   *
+**************************************************************************************************
+
+   1. Create Docker Image
+      -------------------
+
+      Docker file:
+      -----------
+      FROM tomcat:8.0.20-jre8
+      COPY maven-web-application.war /usr/local/tomcat/webapps/maven-web-application.war
+
+    
+CreateImage   :--> docker build -t kishoresrinivasan/maven-web-app:1 .
+ListImage     :--> docker images
+RemoveImage   :--> docker rm image kishoresrinivasa/maven-web-app
+
+         Troubleshoot :                                                                                                                             
+         ------------																    
+                    .
+                    +-- backend
+                    | \-- Dockerfile
+                    \-- target
+                      \-- demo-0.0.1-SNAPSHOT.jar  --> COPY maven-web-application.war /usr/local/tomcat/webapps/maven-web-application.war
+
+                    .
+                    +-- backend
+                    | \-- Dockerfile
+                    \-- target
+                      \-- demo-0.0.1-SNAPSHOT.jar  --> COPY target/maven-web-application.war /usr/local/tomcat/webapps/maven-web-application.war
+
+
+   2. Push Image to "Docker hub"
+      --------------------------
+          
+          1. Do login in "DOCKER SERVER" Instance : --> docker login
+
+          2. Push image to docker hub : --> docker push <imageName>
+                                                        -----------
+                                                           kishoresrinivasan/maven-web-app
+
+
+
+   3. Creating container using Docker Image
+      -------------------------------------
+             --> pulling the image from docker hub and creating container
+
+***************************************************************************************************************************************************
+*   Syantax : docker run -d -p <hostportNum>:<containerportnum> --name <containerName> <imageName>   // by default version will be "latest"       *
+*                             -----------                                                                                                         *
+*                                  <Dockerhub account usename>/imagename:1                                                                        *
+*           ------------------------------------------------------------------------------------------------------                                *
+*           | example : docker run -d -p 9090:8080 --name mavenwebappCont kishoresrinivasan/maven-web-app:1      |                                *
+*           ------------------------------------------------------------------------------------------------------                                *
+***************************************************************************************************************************************************
+
+
+CreateContainer  :--> docker run -d -p 9090:8080 --name mavenwebappCont kishoresrinivasan/maven-web-app:1 
+ListContainer    :--> docker ps
+RemoveContainer  :--> docker rm image kishoresrinivasa/maven-web-app
+
+To pull Image        :--> docker pull kishoresrinivasa/maven-web-app:1
+To Create Container  :--> docker create -p 9090:8080 --name kishoresrinivasan/maven-web-app:1
+To Start Container   :--> docker start <ContainerID>
+To Stop Container    :--> docker stop <ContainerID>
+
+
+
+
+
+4. Docker Network Creation
+--------------------------
+       --> network are use to communicte between the containers 
+              network created in docker and the container are configure in network
+
+       Types : --> bridge
+               --> host
+               --> null
+
+      1. Create Network        :--> docker network -d bridge mynetwork
+      2. Configuring container :--> docker run -d --name container1 -p 9090:8080 --network mynetwork kishoresrinivasan/maven-web-app:1
+
+
+
+5. Docker Volume Creation
+--------------------------
+
+
+************************************************************************************
+*   Syantax : docker volume create -d <driver> <volumeName>                        *
+*                                                                                  *
+*           --------------------------------------------------------               *
+*           | example : docker volume create -d local myvolume     |               *
+*           --------------------------------------------------------               *
+************************************************************************************
+ 
+  1. Install plugin
+     --------------
+           --> Need to Install Rex-ray plugin
+  
+          # docker plugin install rexray/driver
+            -----------------------------------
+                  Need to provide the access key and security key
+       
+          # docker plugin install rexray/ebs EBS_ACCESSKEY=AKIA3XW5YABAEZTZA4HP EBS_SECRETKEY=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
+
+Check Plugins  :--> docker plugin ls
+
+
+  2. Local Volume
+  ---------------
+      Create Volume             :--> docker volume create -d local myvolume
+      Mount Volume to container :--> docker run -d --name containerone --network amazonbridge -v myvolume:/data/db 
+
+  3. Network Volume
+  -----------------
+      Create Volume             :--> docker volume create -d rexray/ebs mynetvolume
+      Mount Volume to container :--> docker run -d --name containerone --network amazonbridge -v mynetvolume:/data/db
+   
+
+
+
+*************************************************************************************************************************************************
+*                                                          DOCKER COMPOSE                                                                       *                                                                                                
+*************************************************************************************************************************************************
+
+   --> using docker compose we can define and run multiple container application
+
+
+
+   1. Install Docker Compose
+   -------------------------
+           # sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-`uname -s`-`uname -m` | sudo tee /usr/local/bin/docker-compose > /dev/null
+           # sudo chmod +x /usr/local/bin/docker-compose
+soft link  # ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+check      # docker-compose --version
+           
+
+    
+   2. Create an YML file
+   ---------------------
+        samplecomposefile.yml
+        ----------------------
+                version: "3"
+                services:
+                   springapp:
+                       container_name: containerspringapp
+                       image: kishoresrinivasan/maven-web-app:1
+                       ports:
+                       - 9090:8080
+                       volumes:
+                       - mynetworkvolume
+                       networks:
+                       - mynetwork
+
+                   mysqldb:
+                       container_name: containermysqlapp
+                       image: kishoresrinivasan/mysql-db:1
+                       ports:
+                       - 9091:8080
+                       volumes:
+                       - mynetworkvolume
+                       networks:
+                       - mynetwork
+           
+                   networks:
+                      mynetwork:
+                         driver: bridge
+
+                   volumes:
+                      mynetworkvolume
+                         driver:rexray/ebs
+
+      
+            
+   3. Check and validate file : docker-compose -f <compose-file> config
+                                ---------------------------------------
+                                            docker-compose -f samplecomposefile.yml config
+
+   4. To Execute compose file : docker-compose -f <composefilename> up -d
+                                -----------------------------------------
+                                       docker-compose -f samplecomposefile.yml up -d
+
+        
+   4. To delete compose file : docker-compose -f <composefilename> down
+                                ---------------------------------------
+                                       docker-compose -f samplecomposefile.yml down
+
+
+
+*************************************************************************************************************************************************
+*                                                          DOCKER SWARM                                                                         *                                                                                                
+*************************************************************************************************************************************************
+   --> orchestration tool {scale up /scale down}
+
+
+
+  1. Create an EC2 instance
+  -------------------------
+           1. t2.micro ("DOCKER SWARM")
+           2. t2.micro ("DOCKER WORKER 1")
+           3. t2.micro ("DOCKER WORKER 2")
+
+
+  2. To Make Master Machine
+  -------------------------
+          # docker swarm init
+            -----------------
+                    --> token will be generated
+          docker swarm join --token SWMTKN-1-5gvuqh8r3lonv90a8ahj6a3aruo7km928x2txhmkz0p64wx4zn-cp0k1f8jv35jbyeav523olyue 172.31.42.33:2377
+
+
+To get the token again :---> docker swarm join-token worker
+
+
+  3. Open Worker instance :--> install docker and execute the token
+ 
+  4. we can add more than one master
+     -------------------------------
+              docker swarm join-token master
+
+  5. Create Docker Service
+     ---------------------
+             docker service create --name serviceone -p 9090:8080 --replicas 4 kishoresrinivasan/maven-web-app:1
+
+             # docker servie ps <serviceId or servicename>
+
+  6. Scale Up :--> docker service scale serviceone = 4
+
+  7. Remove Servie :--> docker service rm serviceone
+
+  8. To drain from creating :--> docker node update --availability "drain" <nodeId>
+
+  9. In global mode :--> docker service create --name serviceone -p 9090:8080 --mode global kishoresrinivasan/maven-web-app:1
+
+  10. Using Stack
+      -----------
+      samplecomposefile.yml
+        ----------------------
+                version: "3"
+                services:
+                   springapp:
+                       container_name: containerspringapp
+                       image: kishoresrinivasan/maven-web-app:1
+                       ports:
+                       - 9090:8080
+                       volumes:
+                       - mynetworkvolume
+                       networks:
+                       - mynetwork
+ added:-->             deploy:
+                          replicas: 4
+
+                   mysqldb:
+                       container_name: containermysqlapp
+                       image: kishoresrinivasan/mysql-db:1
+                       ports:
+                       - 9091:8080
+                       volumes:
+                       - mynetworkvolume
+                       networks:
+                       - mynetwork
+           
+                   networks:
+                      mynetwork:
+                         driver: bridge
+
+                   volumes:
+                      mynetworkvolume
+                         driver:rexray/ebs
+
+       *********************************************************************************
+       *    # docker stack deploy --compose-file samplecomposefile.yml dockerstack     *
+       *********************************************************************************

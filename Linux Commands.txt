@@ -1,0 +1,424 @@
+Linux
+-----
+
+
+Directory Structure
+-------------------
+
+                        /     :-> root directory/parent directory
+                
+                        |
+                        |
+                        V
+     -------------------------------------------------------------------------------------------------------------------------------------------------
+     |           |                |                 |        |            |                       |                  |               |               |
+     |           |                |                 |        |            |                       |                  |               |               |
+     V           V                V                 V        V            V                       V                  V               V               V
+    home         bin              sbin              etc      lib          opt                     dev                temp            var             proc
+     |                                                                                                                                (log files)     (process id                                                    
+     |           (binary files    (System related   (Config  (all the     (by default empty       (device info       (file in temp                      for each task)
+     V             that support     binary files,     files)   lib files)   can be used for s/w     is available       will be available 
+  -----------       the commands)    not accessable                          Installation)           eg: h/w details)   to all the user)
+  |     |                             normal user)
+  |     |
+  V     V
+user1  user2 ...
+
+
+
+Types of USER
+--------------
+    1. root user   : only one user can be root user and we cannot able to create root user
+    2. normal user : no limit
+    3. system user : is the user created by s/w that is instlled in os
+
+
+                    
+
+
+LINUX COMMANDS
+--------------
+
+
+mkdir ---> mkdir test                    : create the directory
+mkdir ---> mkdir -v test                 : -v(verbose) Human interactive mode
+mkdir ---> mkdir -p test/folder1/folder2 : execute all the parent child in single command
+tree  ---> : To see the directory in tree structure
+
+
+touch <file name "f.text"> : will create the file with zero bytes
+
+ls      : list the content in the directory
+ls -l   : long list display all the details
+ls -al  : list the hidden files [OR] { ls -la }
+
+
+pwd : To find the current path (present working directory)
+
+
+
+
+
+
+
+Switch between root and normal user
+-----------------------------------
+
+/home/ec2-user
+ec2-user --> sudo su - : switch to root user and it will also switch to root home directory
+             ---------
+                pwd : /root
+
+         --> sudo su   : switch to root user and it will not switch to root home user
+             -------
+                pwd : /home/ec2-user
+
+
+root user --> exit : (it will bring back to the normal user)  [OR] su - <username>
+
+
+yum install tree    : By default it will excecute in human interactive mode 
+yum install tree -y : It will execute by itself
+yum remove tree     : Remove the package
+yum update tree     : Update the package
+
+
+sudo yum update     : To update the linux os
+
+
+
+
+
+
+Change Directory
+----------------
+cd ~   : It will take to the user home directory (current user)
+cd -   : Previous working directory
+cd     : To home directory
+cd ..  : One directory up
+
+
+
+
+
+
+
+Remove
+------
+rm                      : Remove
+rmdir                   : Remove the directory
+rm -r <directory name>  : -r --> recursevly It will delte recursevly the directory structure
+rm -f <filename>        : Delete the file
+
+
+
+
+
+
+
+Permissions
+-----------
+
+mkdir <name>
+ls -l  : drwxrwxr-x  2  ec2-user  ec2-user  6 Aug 5 11:39 <name>
+         ---------- 
+           1. These permissions are set on basis od umask (user mask)
+           2. This value will be different for normal user and root user
+
+Root User
+--------- 
+Base Permission for Directory =  0777
+                 - uMaskValue =  0022
+                                ------
+                                 0755
+
+Base Permission for file =  0666
+            - uMaskValue =  0022
+                           ------
+                            0644
+
+         
+user         |   uMaskvalue   |    Directory   |    files
+-------------|----------------|----------------|-------------
+rootuser           0022              0755           0644
+normaluser         0002              0775           0664  
+
+r : read    --> 4
+w : write   --> 2
+x : execute --> 1
+
+
+             0   7             5            5 
+                ---------------------------------
+rwxr-xr-x :     rwx           r-x          r-x           Directory
+                ---------------------------------
+                user/owner    group        others
+
+
+             0   6             4            4 
+                ---------------------------------
+rw-r--r-- :     rw-           r--          r--           File
+                ---------------------------------
+                user/owner    group        others
+
+
+Change the UMask value (will be for that particular session)
+----------------------
+
+umask       : To get the default value  
+umask 0222  : To change the umask value 
+
+To Make the UMask value permanent
+---------------------------------
+sudo su -
+vi ~/.bash_profile
+------------------
+    umask 0222
+
+
+Set my own permision to directory or file
+-----------------------------------------
+
+mkdir MyFolder
+chmod 400 MyFolder  : r-- --- ---
+
+
+
+
+
+find Command  (to search file or directory based on conditions)
+------------
+
+find . -type f -empty --> search the empty file in current directory
+find /temp/ f -empty  --> under temp directory
+find ~ -type f -empty --> under home directory
+find / -type f -empty --> under root directory (Search Whole System)
+
+
+
+
+
+Editor Commands
+---------------
+   1. touch
+      -----
+        touch file1.text : It will create a file if not existing else the created time will be updated
+
+   2. vi
+      --
+        vi file2.text : It will create a file if not existing and open the file in console mode
+
+   3. vim
+      ---
+        vim file3.text : It will support programming language
+
+
+
+
+chmod ---> chmod 777 file1.txt     : This will change the permissions of the directory or file
+chmod ---> chmod -R 777 file1.txt  : This will also impact on the child directory 
+
+chown ---> chown root <diectory name> : This will change the owner but need to be executed from the root
+chown ---> chown -r root /home/ec2-user/MyFolder 
+
+chgrp ---> chgrp root /home/ec2-user/file1.txt : This will change the group of file or directory
+chgrp ---> chgrp -R root /home/ec2-user/MyFolder 
+
+
+Copy Command
+------------
+cp ---> : cp file1.txt /temp : This will copy file or directory from one directory to another
+
+
+Move Command
+------------
+mv ---> : mv file1.txt /temp : This will move file or directory from one directory to another
+
+
+Word Count Command
+------------------
+wc ---> : wc -l file1.txt : This will give the total line number
+wc ---> : wc -w file1.txt : This will give the total word number
+wc ---> : wc -c file1.txt : This will give the total characters number
+wc ---> : wc -L file1.txt : This will give the max no of charcaters in line
+wc ---> : wc -m file1.txt : This will give the total characters number
+
+
+Link Command
+------------
+Hard Link ---> ln git.txt git1.txt
+Soft Link ---> ls -s file.txt  /tmp/file1.txt 
+
+
+echo ---> echo "welcome kishore"        : Just print the content
+cat  ---> cat file1.txt                 : To display the content of the file
+cat  ---> cat file1.txt | tr [a-z][A-Z] : To convert upper case
+sort ---> cat file1.txt | sort          : To sort the content of file in asc order
+
+
+System Resource related Command
+-------------------------------
+   if you create a user --> it will create a directory with the user name under home directory
+
+useradd kishore ---> /home/kishore 
+
+cd /home
+ls 
+
+User Login deails track
+-----------------------
+who     : Give the user login details 
+who -H  : same info with header
+w       : using this we can check the avg load of the system 
+
+
+whereis ls  : Shows the path of ls and the manual path of ls command
+
+df -h : Shows free space of disk
+
+
+
+User Group administration Command
+---------------------------------
+
+useradd kishore : It will create a new user 
+---------------
+   to check the user creation #cd /home
+                              #ls
+ 
+     1. On user creation the user dirctory will be created
+     2. A entry will be created in /etc/shadow
+     3. A entry will be created cat /etc/passwd --> the starting number will be 1001 from 7.x version before that the number was 500
+     4. A entry will be created cat /etc/group --> a group wll be created 
+
+id kishore --> show details about user
+
+
+groupadd groupone : It will create a new group
+-----------------
+         
+     1. A entry will be created cat /etc/group --> a group wll be created 
+
+usermod -g groupone kishore  : This will add the user "kishore" to group "groupone"
+
+
+ 
+Create Password for normal user
+-------------------------------
+passwd kishore
+--------------
+    #New Password :
+    #Retype new password :
+ 
+   1. The password will be updated only in shadow file not in passwd
+
+chage kishore : using this we can set the password expiry 
+--------------
+     # minimun password age
+     # maximum password age
+     # last password change date 
+     # password expiration warning
+     # password Inactiv : -1 will make the password never inactive 
+     # account expiration date
+
+
+Deleting user
+-------------
+
+userdel kishore    : will delete the user but not his home directory
+
+userdel -r kishore : It will delete all the config of the user
+
+
+
+Remote Access Commands:
+-----------------------
+
+     1. ssh : Secure Shell
+        ---
+          1. putty    : not limited in executing in command 
+          2. git bash : ssh ec2-user@<ip address> : but password need to be assigned for the user
+
+     
+      2. scp : Secure copy between servers
+         ---
+          #scp file1.text ec2-user@<ip address>: /tmp
+          #password :
+
+
+
+Crontab:
+--------
+  1. crond.service --> it is a service which schedule the jobs
+  2. we can schedule the job by using "crontables"
+  3. Each user will have the access to crontab but they are removed by admin
+
+
+1. Remove the access to user
+     --> create a file cron.allow in /etc will remove all user access to cron job
+2. Add the use you want
+     --> vi /etc/cron.allow --> kishore
+3. Create a job
+     --> su - ec2-user
+     --> vi date.sh
+            -------
+               #echo "Welcome New Users"
+               #date
+     --> chmod 777 date.sh
+     --> crontab -l       : To see the cron tab list
+     --> crontab -e       : To edit the cron tab
+         ----------
+            */1 * * * * /home/ec-2user/date.sh > /home/ec2-user/output.log 
+
+>  : delete the previous output
+>> : will append the output with the content
+
+
+
+
+ 
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

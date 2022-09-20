@@ -1,0 +1,61 @@
+pipeline {
+     agent any
+     environment {
+        PATH="/opt/maven3/bin:$PATH"
+    }
+    stages {
+        stage("git pull") {
+            steps {
+                 git credentialsId: 'GitHubCredentials', url: 'https://github.com/KishoreSrinivasan/maven-web.git'
+                }
+            }
+        // stage("sonar scan") {
+        //     steps {
+        //         withSonarQubeEnv('sonar server') {
+        //             sh "/opt/sonar-scanner/bin/sonar-scanner -Dsonar.host.url=http://54.218.8.94:9000 -Dsonar.projectKey=java -Dsonar.login=e3899f6d6a9e0f046fb6fcf0d304a97d3ade9300"
+        //         }
+        //     }
+        // }
+        stage("maven") {
+            steps {
+                sh "mvn clean package"
+            }
+        }
+        // stage("tomcat") {
+        //     steps {
+        //         sshagent(['TomcatInstance']) {
+        //             sh "scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/java-pipeline/target/maven-web-application.war ec2-user@54.190.22.28:/opt/apache-tomcat-8.5.64/webapps"
+        //         }
+        //     }
+        // }
+        stage("docker Image") {
+            agent any
+            steps {
+                sh 'docker build -t kishoresrinivasan/maven-web-app:1 /var/lib/jenkins/workspace/java-pipeline'
+            }
+        }
+        stage('Docker Push') {
+            agent any
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'DockerHub', passwordVariable: 'DockerHubPassword', usernameVariable: 'DockerHubUser')]) {
+                    sh "docker login -u ${env.DockerHubUser} -p ${env.DockerHubPassword}"
+                    sh 'docker push kishoresrinivasan/maven-web-app:1'
+                }
+            }
+        }
+        stage("docker container") {
+            steps {
+                sshagent(['dockertomcat']) {
+                    script{
+                        try {
+                            sh 'ssh -tt ec2-user@34.211.232.248 -o StrictHostKeyChecking=no "sudo yum update -y && docker container stop mavenwebappCont && docker container rm mavenwebappCont && docker pull kishoresrinivasan/maven-web-app:1 && docker run -d -p 9090:8080 --name mavenwebappCont kishoresrinivasan/maven-web-app:1"'
+                        } catch(err){
+                            echo "Inside Catch"
+                            sh 'ssh -tt ec2-user@34.211.232.248 -o StrictHostKeyChecking=no "sudo yum update -y && docker pull kishoresrinivasan/maven-web-app:1 && docker run -d -p 9090:8080 --name mavenwebappCont kishoresrinivasan/maven-web-app:1"'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
