@@ -1,0 +1,100 @@
+Jenkins file:
+-------------
+
+node{
+     
+    stage('SCM Checkout'){
+        git credentialsId: 'GIT_CREDENTIALS', url:  'https://github.com/MithunTechnologiesDevOps/spring-boot-mongo-docker.git',branch: 'master'
+    }
+    
+    stage(" Maven Clean Package"){
+      def mavenHome =  tool name: "Maven-3.6.1", type: "maven"
+      def mavenCMD = "${mavenHome}/bin/mvn"
+      sh "${mavenCMD} clean package"
+      
+    } 
+    
+    
+    stage('Build Docker Image'){
+        sh 'docker build -t dockerhandson/spring-boot-mongo .'
+    }
+    
+    stage('Push Docker Image'){
+        withCredentials([string(credentialsId: 'DOKCER_HUB_PASSWORD', variable: 'DOKCER_HUB_PASSWORD')]) {
+          sh "docker login -u dockerhandson -p ${DOKCER_HUB_PASSWORD}"
+        }
+        sh 'docker push dockerhandson/spring-boot-mongo'
+     }
+     
+     stage("Deploy To Kuberates Cluster"){
+       kubernetesDeploy(
+         configs: 'springBootMongo.yml', 
+         kubeconfigId: 'KUBERNATES_CONFIG',
+         enableConfigSubstitution: true
+        )
+     }
+	 
+	  /**
+      stage("Deploy To Kuberates Cluster"){
+        sh 'kubectl apply -f springBootMongo.yml'
+      } **/
+     
+}
+
+
+Docker file:
+------------
+
+FROM openjdk:8-alpine
+
+# Required for starting application up.
+RUN apk update && apk add /bin/sh
+
+RUN mkdir -p /opt/app
+ENV PROJECT_HOME /opt/app
+
+COPY target/spring-boot-mongo-1.0.jar $PROJECT_HOME/spring-boot-mongo.jar
+
+WORKDIR $PROJECT_HOME
+EXPOSE 8080
+CMD ["java" ,"-jar","./spring-boot-mongo.jar"]
+
+
+kubenetes yaml:
+---------------
+
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    name: javawebapp
+  name: java-controller
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: javawebapp
+    spec:
+      containers:
+      - image: dockerhandson/java-web-app
+        name: javawebapp
+        ports:
+        - name: javawebapp
+          containerPort: 8080  
+---
+# Node Port Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: javawebapp
+  name: javawebapp
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    name: javawebapp
